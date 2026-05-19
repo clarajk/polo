@@ -65,7 +65,8 @@ pub fn new(args: NewArgs) -> anyhow::Result<()> {
     {
         let mut f = OpenOptions::new()
             .write(true)
-            .create_new(true)
+            .create(true)
+            .truncate(true)
             .open(&path)?;
 
         write_header(&mut f, args.format)?;
