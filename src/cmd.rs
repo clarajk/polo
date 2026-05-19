@@ -2,7 +2,6 @@ use crate::cli::{Format, NewArgs};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
 
 fn write_header(mut w: impl Write, fmt: Format) -> std::io::Result<()> {
     match fmt {
@@ -39,27 +38,10 @@ fn write_header(mut w: impl Write, fmt: Format) -> std::io::Result<()> {
     Ok(())
 }
 
-fn bin_path() -> anyhow::Result<PathBuf> {
-    let Some(path) = dirs::home_dir() else {
-        anyhow::bail!("could not determine home directory");
-    };
-
-    let path = path.join(".local").join("bin");
-    if !path.is_dir() {
-        std::fs::create_dir_all(&path)?;
-    }
-
-    Ok(path)
-}
-
 pub fn new(args: NewArgs) -> anyhow::Result<()> {
-    let path = bin_path()?.join(&args.name);
+    let path = crate::path::bin()?.join(&args.name);
     if path.exists() && !args.force {
-        eprintln!(
-            "File {} already exists. Use --force to overwrite.",
-            args.name
-        );
-        std::process::exit(1);
+        anyhow::bail!("{} already exists", path.display());
     }
 
     {
@@ -78,18 +60,19 @@ pub fn new(args: NewArgs) -> anyhow::Result<()> {
     std::fs::set_permissions(&path, perms)?;
 
     edit::edit_file(&path)?;
+
     Ok(())
 }
 
 pub fn remove(name: String) -> anyhow::Result<()> {
-    let path = bin_path()?.join(&name);
+    let path = crate::path::bin()?.join(&name);
     std::fs::remove_file(&path)?;
 
     Ok(())
 }
 
 pub fn edit(name: String) -> anyhow::Result<()> {
-    let path = bin_path()?.join(&name);
+    let path = crate::path::bin()?.join(&name);
     edit::edit_file(&path)?;
 
     Ok(())

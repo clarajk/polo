@@ -33,12 +33,8 @@ pub enum Command {
     /// Create new script.
     New(NewArgs),
     /// Edit existing script.
-    Edit {
-        name: String,
-    },
+    Edit { name: String },
     #[clap(alias = "rm")]
     /// Remove existing script.
-    Remove {
-        name: String,
-    },
+    Remove { name: String },
 }
