@@ -1,47 +1,19 @@
-use crate::cli::{Format, NewArgs};
+use crate::cli::NewArgs;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
-
-fn write_header(mut w: impl Write, fmt: Format) -> std::io::Result<()> {
-    match fmt {
-        Format::Sh => {
-            writeln!(w, "#!/bin/sh")?;
-        }
-        Format::Bash => {
-            writeln!(w, "#!/usr/bin/env bash")?;
-        }
-        Format::Zsh => {
-            writeln!(w, "#!/usr/bin/env zsh")?;
-        }
-        Format::Fish => {
-            writeln!(w, "#!/usr/bin/env fish")?;
-        }
-        Format::NuShell => {
-            writeln!(w, "#!/usr/bin/env nu")?;
-        }
-        Format::Ruby => {
-            writeln!(w, "#!/usr/bin/env ruby")?;
-            writeln!(w, "# frozen_string_literal: true")?;
-        }
-        Format::Python => {
-            writeln!(w, "#!/usr/bin/env python3")?;
-        }
-        Format::Perl => {
-            writeln!(w, "#!/usr/bin/env perl")?;
-        }
-        Format::Lua => {
-            writeln!(w, "#!/usr/bin/env lua")?;
-        }
-    }
-
-    Ok(())
-}
 
 pub fn new(args: NewArgs) -> anyhow::Result<()> {
     let path = crate::path::bin()?.join(&args.name);
     if path.exists() && !args.force {
         anyhow::bail!("{} already exists", path.display());
+    }
+
+    let lib = crate::path::lib(args.format)?;
+    if lib.exists() && !lib.is_dir() {
+        eprintln!("warning: {} is not a directory", lib.display());
+    } else if !lib.exists() {
+        std::fs::create_dir_all(&lib)?;
     }
 
     {
@@ -51,7 +23,19 @@ pub fn new(args: NewArgs) -> anyhow::Result<()> {
             .truncate(true)
             .open(&path)?;
 
-        write_header(&mut f, args.format)?;
+        writeln!(f, "{}", args.format.shebang())?;
+
+        if let Some(prelude) = args.format.prelude() {
+            writeln!(f, "{}", prelude)?;
+        }
+
+        if args.lib {
+            writeln!(f)?;
+            writeln!(f, "{}", args.format.bootstrap())?;
+        }
+
+        writeln!(f)?;
+
         f.sync_all()?;
     }
 
