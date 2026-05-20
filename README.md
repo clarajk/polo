@@ -30,10 +30,12 @@ A small utility for managing scripts for the local user
 Usage: polo <COMMAND>
 
 Commands:
-  new     Create new script
-  edit    Edit existing script
-  remove  Remove existing script
-  help    Print this message or the help of the given subcommand(s)
+  new      Create new script
+  edit     Edit existing script
+  remove   Remove existing script
+  list     List all executable files in ~/.local/bin
+  install  Install a file to ~/.local/bin and make it executable
+  help     Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help  Print help

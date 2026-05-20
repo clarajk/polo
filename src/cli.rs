@@ -1,4 +1,5 @@
 use clap::{Args, Parser, ValueEnum};
+use std::path::PathBuf;
 
 #[derive(Debug, Copy, Clone, ValueEnum)]
 pub enum Format {
@@ -116,7 +117,7 @@ pub struct NewArgs {
     /// The name of the new script.
     pub name: String,
     #[clap(short, long)]
-    /// Force overwrite.
+    /// Force overwrite if the file already exists.
     pub force: bool,
     #[clap(short, long)]
     /// Add external library bootstrap code to the script header.
@@ -134,4 +135,15 @@ pub enum Command {
     #[clap(alias = "rm")]
     /// Remove existing script.
     Remove { name: String },
+    #[clap(alias = "ls")]
+    /// List all executable files in ~/.local/bin
+    List,
+    /// Install a file to ~/.local/bin and make it executable.
+    Install {
+        /// The path to the file that will be installed.
+        path: PathBuf,
+
+        /// Force overwrite if the file already exists.
+        force: bool,
+    },
 }

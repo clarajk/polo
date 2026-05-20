@@ -1,9 +1,22 @@
 use crate::cli::NewArgs;
+use dialoguer::Confirm;
+use dialoguer::theme::ColorfulTheme;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
+
+fn check_name(name: impl AsRef<str>) -> anyhow::Result<()> {
+    if !safename::is_file_safe(name.as_ref()) {
+        anyhow::bail!("{} is not a valid file name", name.as_ref());
+    } else {
+        Ok(())
+    }
+}
 
 pub fn new(args: NewArgs) -> anyhow::Result<()> {
+    check_name(&args.name)?;
+
     let path = crate::path::bin()?.join(&args.name);
     if path.exists() && !args.force {
         anyhow::bail!("{} already exists", path.display());
@@ -34,8 +47,6 @@ pub fn new(args: NewArgs) -> anyhow::Result<()> {
             writeln!(f, "{}", args.format.bootstrap())?;
         }
 
-        writeln!(f)?;
-
         f.sync_all()?;
     }
 
@@ -49,15 +60,57 @@ pub fn new(args: NewArgs) -> anyhow::Result<()> {
 }
 
 pub fn remove(name: String) -> anyhow::Result<()> {
+    check_name(&name)?;
+
     let path = crate::path::bin()?.join(&name);
-    std::fs::remove_file(&path)?;
+
+    let confirm = Confirm::with_theme(&ColorfulTheme::default())
+        .default(false)
+        .with_prompt(format!("Remove {}?", path.display()))
+        .interact()?;
+
+    if confirm {
+        std::fs::remove_file(&path)?;
+        println!("Removed {}", path.display());
+    }
 
     Ok(())
 }
 
 pub fn edit(name: String) -> anyhow::Result<()> {
+    check_name(&name)?;
+
     let path = crate::path::bin()?.join(&name);
     edit::edit_file(&path)?;
+
+    Ok(())
+}
+
+pub fn list() -> anyhow::Result<()> {
+    let path = crate::path::bin()?;
+
+    for entry in path.read_dir()? {
+        println!("{}", entry?.file_name().to_string_lossy());
+    }
+
+    Ok(())
+}
+
+pub fn install(src: PathBuf, force: bool) -> anyhow::Result<()> {
+    let file_name = src
+        .file_name()
+        .ok_or(anyhow::anyhow!("unable to detect file name"))?;
+    let dest = crate::path::bin()?.join(file_name);
+
+    if dest.is_file() && !force {
+        anyhow::bail!("{} already exists", dest.display());
+    }
+
+    std::fs::rename(src, &dest)?;
+
+    let mut perms = dest.metadata()?.permissions();
+    perms.set_mode(0o755);
+    std::fs::set_permissions(&dest, perms)?;
 
     Ok(())
 }

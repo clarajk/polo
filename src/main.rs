@@ -37,6 +37,8 @@ fn main() -> anyhow::Result<()> {
         Command::New(args) => cmd::new(args)?,
         Command::Edit { name } => cmd::edit(name)?,
         Command::Remove { name } => cmd::remove(name)?,
+        Command::List => cmd::list()?,
+        Command::Install { path, force } => cmd::install(path, force)?,
     }
 
     Ok(())
