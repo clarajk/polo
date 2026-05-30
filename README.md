@@ -1,6 +1,8 @@
 # polo
 A small utility for managing scripts for the local user.
 
+[![Release](https://github.com/clarajk/polo/actions/workflows/release.yml/badge.svg)](https://github.com/clarajk/polo/actions/workflows/release.yml)
+
 ## Install
 
 Download the latest Linux release from the GitHub Releases page.
